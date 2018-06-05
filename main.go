@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 const web1 string = "http://ipv4.download.thinkbroadband.com/20MB.zip"
 const web2 string = "http://ipv4.download.thinkbroadband.com/5MB.zip"
 
-func downloadFile(url string, path string) {
+func downloadFile(url string, path string, msg chan string) {
 
 	out, err := os.Create(path)
 	if err != nil {
@@ -29,14 +30,20 @@ func downloadFile(url string, path string) {
 		log.Printf("Error copying file: %s", err)
 	}
 
-	log.Printf("%s", url)
+	s := fmt.Sprintf("%s", url)
+
+	msg <- s
 
 }
 
 func main() {
 
-	downloadFile(web1, "./file20MB")
-	downloadFile(web2, "./file5MB_1")
-	downloadFile(web2, "./file5MB_2")
+	msg := make(chan string, 1)
+	go downloadFile(web1, "./file20MB", msg)
+	go downloadFile(web2, "./file5MB_1", msg)
+	go downloadFile(web2, "./file5MB_2", msg)
 
+	for i := 0; i < 3; i++ {
+		log.Printf("%s", <-msg)
+	}
 }
